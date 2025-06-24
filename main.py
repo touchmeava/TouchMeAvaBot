@@ -1,8 +1,9 @@
 import os
 from fastapi import FastAPI, Request
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import Update
+from aiogram import Bot, Dispatcher, types, Router
 from aiogram.enums import ParseMode
+from aiogram.types import Update
+from aiogram.filters import Command
 
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
@@ -10,14 +11,16 @@ if not TOKEN:
 
 bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher()
+router = Router()
+dp.include_router(router)
 
 app = FastAPI()
 
 @app.get("/")
 async def health():
-    return {"message": "TouchMeAva is online"}
+    return {"message": "TouchMeAva is online 😘"}
 
-@dp.message(commands=["start"])
+@router.message(Command("start"))
 async def start_cmd(msg: types.Message):
     await msg.answer("Hey baby 😘 Ava is alive and ready for you.")
 
