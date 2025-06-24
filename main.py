@@ -27,16 +27,17 @@ async def root():
 async def webhook_handler(request: Request):
     try:
         data = await request.json()
-        print("Received webhook:", data)  # ✅ For debugging
+        print("📩 Raw webhook update received:", data)
         update = Update.to_object(data)
         await dp.process_update(update)
     except Exception as e:
-        print(f"Webhook error: {e}")
+        print(f"❌ Webhook error: {e}")
     return {"ok": True}
 
 # Bot command handler
 @dp.message_handler(commands=["start"])
 async def start_handler(message: types.Message):
+    print("✅ Received /start from:", message.from_user.username)
     await message.reply("Hey cutie 😘 I’m alive and listening to you...")
 
 # Set webhook on startup
