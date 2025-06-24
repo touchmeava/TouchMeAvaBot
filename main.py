@@ -18,6 +18,7 @@ app = FastAPI()
 # Webhook route
 @app.post("/webhook")
 async def webhook_handler(request: Request):
+    print("✅ Webhook called")  # <-- Add this
     try:
         data = await request.json()
         update = Update.to_object(data)
