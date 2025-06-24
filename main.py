@@ -2,29 +2,25 @@ import os
 from fastapi import FastAPI, Request
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Update
-from aiogram.client.default import DefaultBotSettings
+from aiogram.enums import ParseMode
 
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
     raise Exception("BOT_TOKEN not set!")
 
-# Init bot & dispatcher
-bot = Bot(token=TOKEN, default=DefaultBotSettings(parse_mode="HTML"))
+bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher()
 
 app = FastAPI()
 
-# Health check
 @app.get("/")
-async def root():
-    return {"message": "Ava is online 😘"}
+async def health():
+    return {"message": "TouchMeAva is online"}
 
-# /start command
 @dp.message(commands=["start"])
 async def start_cmd(msg: types.Message):
     await msg.answer("Hey baby 😘 Ava is alive and ready for you.")
 
-# Webhook route
 @app.post("/webhook")
 async def handle_webhook(request: Request):
     try:
@@ -35,7 +31,6 @@ async def handle_webhook(request: Request):
         print("❌ Webhook error:", e)
     return {"ok": True}
 
-# Set webhook when starting
 @app.on_event("startup")
 async def startup():
     webhook_url = "https://touchmeavabot-kb8b.onrender.com/webhook"
