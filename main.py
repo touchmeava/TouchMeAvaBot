@@ -26,5 +26,5 @@ def main():
     app.on_startup.append(on_startup)
     web.run_app(app, port=int(os.getenv("PORT", 5000)))
 
-if name == "__main__":
+if __name__ == "__main__":
     main()
