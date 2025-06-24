@@ -30,6 +30,6 @@ async def handle_webhook(req: Request):
 
 @app.on_event("startup")
 async def on_startup():
-    webhook_url = "https://touchmeavabot-kb8b.onrender.com/webhook"
+    webhook_url = "https://touchmeavabot-k8b8.onrender.com/webhook"
     await bot.set_webhook(webhook_url)
     print(f"✅ Webhook set: {webhook_url}")
