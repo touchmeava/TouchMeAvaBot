@@ -1,15 +1,20 @@
 import os
 from fastapi import FastAPI, Request
-from aiogram import Bot, Dispatcher
-from aiogram.types import Update, Message
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import Update
+from aiogram.client.default import DefaultBotSettings
+from aiogram import Router
 from aiogram.filters import Command
 
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
-    raise RuntimeError("BOT_TOKEN is not set!")
+    raise Exception("BOT_TOKEN is not set!")
 
-bot = Bot(token=TOKEN)
+# Init bot and dispatcher
+bot = Bot(token=TOKEN, default=DefaultBotSettings(parse_mode="HTML"))
 dp = Dispatcher()
+router = Router()
+dp.include_router(router)
 
 app = FastAPI()
 
@@ -17,15 +22,18 @@ app = FastAPI()
 async def health():
     return {"message": "TouchMeAva is online 😘"}
 
-@dp.message(Command("start"))
-async def start_cmd(msg: Message):
-    await msg.respond("Hey baby 😘 Ava is alive and ready for you.")
+@router.message(Command("start"))
+async def start_cmd(msg: types.Message):
+    await msg.answer("Hey baby 😘 Ava is alive and ready for you.")
 
 @app.post("/webhook")
-async def handle_webhook(req: Request):
-    data = await req.json()
-    update = Update(**data)
-    await dp.process_update(update)
+async def handle_webhook(request: Request):
+    try:
+        data = await request.json()
+        update = Update.model_validate(data)
+        await dp.feed_update(bot, update)
+    except Exception as e:
+        print("❌ Webhook error:", e)
     return {"ok": True}
 
 @app.on_event("startup")
