@@ -8,7 +8,7 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
 async def on_startup(app):
-    await bot.set_webhook("https://<your-render-url>/webhook")
+    await bot.set_webhook("https://touchmeavabot-kb8b.onrender.com/webhook")
 
 @dp.message_handler()
 async def echo(message: types.Message):
