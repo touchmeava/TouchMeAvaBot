@@ -30,7 +30,7 @@ app = FastAPI()
 
 @app.get("/")
 async def health():
-    return {"message": "TouchMeAva is online 😘"}
+    return {"message": "TouchMeAva is online 🥰"}
 
 @router.message(Command("start"))
 async def start_cmd(msg: types.Message):
