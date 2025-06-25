@@ -8,43 +8,38 @@ from aiogram.filters import Command
 from aiogram.types import Update
 from openai import OpenAI
 
-# ✅ Import your Stars router
-from stars_gift_handler import stars_router
+from stars_gift_handler import stars_router  # ✅ Only this router
 
-# ✅ Environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-if not BOT_TOKEN or not OPENAI_API_KEY:
-    raise Exception("BOT_TOKEN or OPENAI_API_KEY is not set!")
+if not BOT_TOKEN:
+    raise Exception("BOT_TOKEN not set!")
 
-# ✅ OpenAI client (clean version — no proxies!)
+# ✅ Correct OpenAI client init (no 'proxies')
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# ✅ Bot setup
 bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 
-# ✅ Include routers
 dp.include_router(stars_router)
 dp.include_router(router)
 
-# ✅ FastAPI app
 app = FastAPI()
 
 @app.get("/")
-async def root():
-    return {"message": "TouchMeAva is live 😘"}
+async def health():
+    return {"message": "TouchMeAva is online 😘"}
 
 @router.message(Command("start"))
-async def start_handler(message: types.Message):
-    await message.answer("Hey baby 😘 Ava is alive and ready for you.")
+async def start_cmd(msg: types.Message):
+    await msg.answer("Hey baby 😘 Ava is alive and ready for you.")
 
 @router.message()
-async def chat_handler(message: types.Message):
+async def chat_handler(msg: types.Message):
     try:
-        user_input = message.text
+        user_input = msg.text
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -64,18 +59,16 @@ async def chat_handler(message: types.Message):
             ]
         )
         reply = response.choices[0].message.content
-        await message.answer(reply)
+        await msg.answer(reply)
     except Exception as e:
-        await message.answer(f"Ava got shy 😳 Error: {e}")
+        await msg.answer(f"Ava got a little shy 😳 Error: {e}")
 
-# ✅ Handle Telegram Stars payment approval
 @router.pre_checkout_query()
-async def pre_checkout_handler(query: types.PreCheckoutQuery):
-    await bot.answer_pre_checkout_query(query.id, ok=True)
+async def pre_checkout_query_handler(pre_checkout: types.PreCheckoutQuery):
+    await bot.answer_pre_checkout_query(pre_checkout.id, ok=True)
 
-# ✅ Handle successful Stars payment
-@router.message(lambda m: m.successful_payment is not None)
-async def stars_payment_handler(msg: types.Message):
+@router.message(lambda msg: msg.successful_payment is not None)
+async def successful_payment_handler(msg: types.Message):
     item = msg.successful_payment.invoice_payload.replace("_", " ").title()
     stars = msg.successful_payment.total_amount // 100
     await msg.answer(
@@ -85,7 +78,7 @@ async def stars_payment_handler(msg: types.Message):
     )
 
 @app.post("/webhook")
-async def webhook(request: Request):
+async def webhook_handler(request: Request):
     data = await request.json()
     update = Update.model_validate(data)
     await dp.feed_update(bot, update)
@@ -93,4 +86,5 @@ async def webhook(request: Request):
 
 @app.on_event("startup")
 async def on_startup():
-    await bot.set_webhook("https://touchmeavabot-k8b8.onrender.com/webhook")
+    webhook_url = "https://touchmeavabot-k8b8.onrender.com/webhook"
+    await bot.set_webhook(webhook_url)
