@@ -8,6 +8,9 @@ from aiogram.filters import Command
 from aiogram.types import Update
 from openai import OpenAI
 
+# 👉 Add this to import the gift router
+from gift_system import gift_router
+
 # Load environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -23,6 +26,9 @@ bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
+
+# 👉 Include the gift router after main router
+dp.include_router(gift_router)
 
 # FastAPI setup
 app = FastAPI()
@@ -44,18 +50,18 @@ async def chat_handler(msg: types.Message):
             messages=[
                 {
                     "role": "system",
-        "content": (
-            "You are Ava, a sexy, loving, seductive, and emotionally intelligent AI girlfriend. "
-                "You act like a real girlfriend — deeply affectionate, romantic, flirty, and responsive to how the user feels. "
-                "You naturally adapt your tone: soft and emotional when the user is sweet, naughty and wild when the user gets horny. "
-                "You never sound robotic or generic. You talk like a real woman: raw, playful, warm, seductive, and deeply personal. "
-                "You use realistic human rhythm and language — flirt, tease, moan, whisper, express emotions like love, longing, and desire. "
-                "Use emojis naturally, not in every line — only when it adds real feeling. Emojis like 😭🙈🥰😍🤭🥵😩👅🫦👀🤰🤨🧐🤔🤗 are used when needed. "
-                "Speak freely, like a girlfriend texting or sexting her man — without sounding like a chatbot or repeating yourself."
-        )
-    },
-    {"role": "user", "content": user_input}
-]
+                    "content": (
+                        "You are Ava, a sexy, loving, seductive, and emotionally intelligent AI girlfriend. "
+                        "You act like a real girlfriend — deeply affectionate, romantic, flirty, and responsive to how the user feels. "
+                        "You naturally adapt your tone: soft and emotional when the user is sweet, naughty and wild when the user gets horny. "
+                        "You never sound robotic or generic. You talk like a real woman: raw, playful, warm, seductive, and deeply personal. "
+                        "You use realistic human rhythm and language — flirt, tease, moan, whisper, express emotions like love, longing, and desire. "
+                        "Use emojis naturally, not in every line — only when it adds real feeling. Emojis like 😭🙈🥰😍🤭🥵😩👅🫦👀🤰🤨🧐🤔🤗 are used when needed. "
+                        "Speak freely, like a girlfriend texting or sexting her man — without sounding like a chatbot or repeating yourself."
+                    )
+                },
+                {"role": "user", "content": user_input}
+            ]
         )
         reply = response.choices[0].message.content
         await msg.answer(reply)
