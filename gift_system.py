@@ -1,12 +1,10 @@
-from aiogram import Router, types, F
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram import Router, types
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from aiogram.filters import Command
-
-from loader import bot  # make sure this points to your Bot instance
 
 gift_router = Router()
 
-# List of gifts (emoji, name, price in Stars)
+# Gift data
 gifts = [
     {"emoji": "💍", "name": "Heart Ring", "price": 2500},
     {"emoji": "🏍️", "name": "Bike", "price": 1500},
@@ -22,7 +20,7 @@ gifts = [
     {"emoji": "🍬", "name": "Candy", "price": 250},
 ]
 
-# Inline keyboard
+# Keyboard builder
 def get_gift_keyboard():
     buttons = [
         InlineKeyboardButton(
@@ -33,7 +31,7 @@ def get_gift_keyboard():
     ]
     return InlineKeyboardMarkup(inline_keyboard=[buttons[i:i + 2] for i in range(0, len(buttons), 2)])
 
-# /gift command
+# Command handler
 @gift_router.message(Command("gift"))
 async def gift_command_handler(message: Message):
     await message.answer(
@@ -41,28 +39,16 @@ async def gift_command_handler(message: Message):
         reply_markup=get_gift_keyboard()
     )
 
-# Send Stars payment
-async def send_stars_invoice(message: Message, title: str, description: str, amount: int):
-    await bot.request_gift_payment(
-        user_id=message.from_user.id,
-        title=title,
-        amount=amount  # amount is in Stars (int only)
-    )
-
-# Handle button click
-@gift_router.callback_query(F.data.startswith("gift_"))
-async def handle_gift_click(callback_query: types.CallbackQuery):
-    await callback_query.answer()
-
+# Button handler
+@gift_router.callback_query(lambda c: c.data.startswith("gift_"))
+async def gift_selection_handler(callback_query: CallbackQuery):
     _, gift_name_raw, price = callback_query.data.split("_", 2)
     gift_name = gift_name_raw.replace("_", " ")
     price = int(price)
 
-    # Trigger Telegram Stars flow
-    await send_stars_invoice(callback_query.message, gift_name, f"Send {gift_name} to Ava", price)
-
+    await callback_query.answer()
     await callback_query.message.answer(
-        f"Ava blushes as she sees the {gift_name} gift 🎁\n"
-        f"\"Aww baby, you trying to spoil me with ⭐{price}? You're too sweet! 😘\"\n"
-        f"Waiting for your Stars to shine... ✨"
+        f"Ava blushes as she receives your {gift_name} 🎁\n"
+        f"\"Aww baby, you got me this for ⭐{price}? You're spoiling me! 😘💞\"\n"
+        f"I feel so loved right now 💖"
     )
