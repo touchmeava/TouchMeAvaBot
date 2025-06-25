@@ -51,7 +51,6 @@ async def process_star_gift(callback: types.CallbackQuery):
     gift_key = gift_name_raw.lower()
     gift_name = gift_key.replace("_", " ")
 
-    # Optional: Check if price exists in map
     if gift_key not in PRICE_MAPPING:
         await callback.answer("This gift is not available right now.")
         return
