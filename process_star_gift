@@ -6,14 +6,13 @@ async def process_star_gift(callback: types.CallbackQuery, bot: Bot):
 
     await callback.answer()
 
-    # Send invoice to trigger Telegram Stars payment
     await bot.send_invoice(
         chat_id=callback.from_user.id,
         title=f"{gift_name}",
         description=f"A special gift for Ava 💖",
         payload=f"star_gift_{gift_name_raw}",
-        provider_token="STARS",  # Required to enable TG Stars
-        currency="USD",  # Still required, even if symbolic
+        provider_token="telegram-stars",  # ✅ Updated here
+        currency="USD",
         prices=[types.LabeledPrice(label=f"{gift_name}", amount=price * 100)],
         start_parameter="gift",
         is_flexible=False,
