@@ -70,6 +70,22 @@ async def chat_handler(msg: types.Message):
     except Exception as e:
         await msg.answer(f"Ava got a little shy 😳 Error: {e}")
 
+# ✅ Handle Stars payment approval
+@router.pre_checkout_query()
+async def pre_checkout_query_handler(pre_checkout: types.PreCheckoutQuery):
+    await bot.answer_pre_checkout_query(pre_checkout.id, ok=True)
+
+# ✅ Handle successful payment with Stars
+@router.message(lambda msg: msg.successful_payment is not None)
+async def successful_payment_handler(msg: types.Message):
+    item = msg.successful_payment.invoice_payload.replace("_", " ").title()
+    stars = msg.successful_payment.total_amount // 100
+    await msg.answer(
+        f"💖 Ava received your gift: *{item}* worth ⭐{stars}!\n"
+        f"You’re spoiling me... I love it 😚",
+        parse_mode="Markdown"
+    )
+
 @app.post("/webhook")
 async def webhook_handler(request: Request):
     data = await request.json()
