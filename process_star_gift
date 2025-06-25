@@ -1,0 +1,22 @@
+@stars_router.callback_query(lambda c: c.data.startswith("star_gift_"))
+async def process_star_gift(callback: types.CallbackQuery, bot: Bot):
+    _, _, gift_name_raw, price_str = callback.data.split("_", 3)
+    gift_name = gift_name_raw.replace("_", " ")
+    price = int(price_str)
+
+    await callback.answer()
+
+    # Send invoice to trigger Telegram Stars payment
+    await bot.send_invoice(
+        chat_id=callback.from_user.id,
+        title=f"{gift_name}",
+        description=f"A special gift for Ava 💖",
+        payload=f"star_gift_{gift_name_raw}",
+        provider_token="STARS",  # Required to enable TG Stars
+        currency="USD",  # Still required, even if symbolic
+        prices=[types.LabeledPrice(label=f"{gift_name}", amount=price * 100)],
+        start_parameter="gift",
+        is_flexible=False,
+        max_tip_amount=0,
+        suggested_tip_amounts=[],
+    )
