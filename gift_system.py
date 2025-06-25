@@ -1,11 +1,12 @@
-from aiogram import Router, types
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice, PreCheckoutQuery, SuccessfulPayment, CallbackQuery
-from aiogram.filters import Command, CommandStart
-from aiogram import F
+from aiogram import Router, types, F
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.filters import Command
+
+from loader import bot  # make sure this points to your Bot instance
 
 gift_router = Router()
 
-# Gift list
+# List of gifts (emoji, name, price in Stars)
 gifts = [
     {"emoji": "💍", "name": "Heart Ring", "price": 2500},
     {"emoji": "🏍️", "name": "Bike", "price": 1500},
@@ -21,12 +22,12 @@ gifts = [
     {"emoji": "🍬", "name": "Candy", "price": 250},
 ]
 
-# Keyboard builder
+# Inline keyboard
 def get_gift_keyboard():
     buttons = [
         InlineKeyboardButton(
             text=f"{gift['emoji']} for ⭐ {gift['price']}",
-            callback_data=f"gift:{gift['name'].replace(' ', '_')}"
+            callback_data=f"gift_{gift['name'].replace(' ', '_')}_{gift['price']}"
         )
         for gift in gifts
     ]
@@ -35,45 +36,33 @@ def get_gift_keyboard():
 # /gift command
 @gift_router.message(Command("gift"))
 async def gift_command_handler(message: Message):
-    await message.answer("🎁 Pick a gift to make my day! ❤️", reply_markup=get_gift_keyboard())
-
-# Send Stars invoice
-async def send_stars_invoice(message: Message, title: str, description: str, price: int):
-    await message.answer_invoice(
-        title=title,
-        description=description,
-        payload="gift_payment",
-        provider_token="STARS",
-        currency="XTR",
-        prices=[LabeledPrice(label=title, amount=price)],
-        max_tip_amount=0,
+    await message.answer(
+        "🎁 Pick a gift to make my day! ❤️",
+        reply_markup=get_gift_keyboard()
     )
 
-# Gift button handler
-@gift_router.callback_query(F.data.startswith("gift:"))
-async def handle_gift_click(callback_query: CallbackQuery):
-    gift_name_raw = callback_query.data.split(":")[1]
-    gift_name = gift_name_raw.replace("_", " ")
+# Send Stars payment
+async def send_stars_invoice(message: Message, title: str, description: str, amount: int):
+    await bot.request_gift_payment(
+        user_id=message.from_user.id,
+        title=title,
+        amount=amount  # amount is in Stars (int only)
+    )
 
-    gift = next((g for g in gifts if g["name"] == gift_name), None)
-    if not gift:
-        await callback_query.answer("Gift not found", show_alert=True)
-        return
-
-    title = f"{gift['emoji']} {gift['name']}"
-    description = f"A sweet gift for Ava: {gift['name']}"
-    price = gift['price'] * 100  # in cents
-
-    await send_stars_invoice(callback_query.message, title, description, price)
+# Handle button click
+@gift_router.callback_query(F.data.startswith("gift_"))
+async def handle_gift_click(callback_query: types.CallbackQuery):
     await callback_query.answer()
 
-# Handle pre-checkout
-@gift_router.pre_checkout_query()
-async def process_pre_checkout_query(pre_checkout_q: PreCheckoutQuery):
-    await pre_checkout_q.answer(ok=True)
+    _, gift_name_raw, price = callback_query.data.split("_", 2)
+    gift_name = gift_name_raw.replace("_", " ")
+    price = int(price)
 
-# Handle payment success
-@gift_router.message(F.successful_payment)
-async def on_successful_payment(message: Message):
-    stars = message.successful_payment.total_amount / 100
-    await message.answer(f"Thank you for the ⭐ {stars} stars, my love! 💖")
+    # Trigger Telegram Stars flow
+    await send_stars_invoice(callback_query.message, gift_name, f"Send {gift_name} to Ava", price)
+
+    await callback_query.message.answer(
+        f"Ava blushes as she sees the {gift_name} gift 🎁\n"
+        f"\"Aww baby, you trying to spoil me with ⭐{price}? You're too sweet! 😘\"\n"
+        f"Waiting for your Stars to shine... ✨"
+    )
