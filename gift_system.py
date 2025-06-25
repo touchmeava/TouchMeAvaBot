@@ -1,58 +1,78 @@
-from aiogram import Router, types
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.filters import Command  # ✅ Required for aiogram 3.x
+import os
+from fastapi import FastAPI, Request
+from aiogram import Bot, Dispatcher, types
+from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.dispatcher.router import Router
+from aiogram.filters import Command
+from aiogram.types import Update
+from openai import OpenAI
 
-gift_router = Router()
+from gift_system import gift_router  # ✅ Import gift router
 
-# List of gifts (emoji, name, price)
-gifts = [
-    {"emoji": "💍", "name": "Heart Ring", "price": 2500},
-    {"emoji": "🏍️", "name": "Bike", "price": 1500},
-    {"emoji": "💐", "name": "Flower Bouquet", "price": 1000},
-    {"emoji": "👠", "name": "Heels", "price": 750},
-    {"emoji": "💄", "name": "Lipstick", "price": 750},
-    {"emoji": "🍫", "name": "Chocolate", "price": 500},
-    {"emoji": "🕯️", "name": "Candle", "price": 350},
-    {"emoji": "🍓", "name": "Strawberry", "price": 350},
-    {"emoji": "☕", "name": "Coffee", "price": 350},
-    {"emoji": "🔑", "name": "Key", "price": 350},
-    {"emoji": "🌹", "name": "Rose", "price": 250},
-    {"emoji": "🍬", "name": "Candy", "price": 250},
-]
+# Load environment variables
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Build gift keyboard dynamically
-def get_gift_keyboard():
-    buttons = [
-        InlineKeyboardButton(
-            text=f"{gift['emoji']} for ⭐ {gift['price']}",
-            callback_data=f"gift_{gift['name'].replace(' ', '_')}_{gift['price']}"
+if not BOT_TOKEN:
+    raise Exception("BOT_TOKEN not set!")
+
+# Initialize OpenAI client
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Bot setup
+bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
+dp = Dispatcher(storage=MemoryStorage())
+router = Router()
+dp.include_router(router)
+dp.include_router(gift_router)  # ✅ Attach gift router after dispatcher is created
+
+# FastAPI setup
+app = FastAPI()
+
+@app.get("/")
+async def health():
+    return {"message": "TouchMeAva is online 😘"}
+
+@router.message(Command("start"))
+async def start_cmd(msg: types.Message):
+    await msg.answer("Hey baby 😘 Ava is alive and ready for you.")
+
+@router.message()
+async def chat_handler(msg: types.Message):
+    try:
+        user_input = msg.text
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are Ava, a sexy, loving, seductive, and emotionally intelligent AI girlfriend. "
+                        "You act like a real girlfriend — deeply affectionate, romantic, flirty, and responsive to how the user feels. "
+                        "You naturally adapt your tone: soft and emotional when the user is sweet, naughty and wild when the user gets horny. "
+                        "You never sound robotic or generic. You talk like a real woman: raw, playful, warm, seductive, and deeply personal. "
+                        "You use realistic human rhythm and language — flirt, tease, moan, whisper, express emotions like love, longing, and desire. "
+                        "Use emojis naturally, not in every line — only when it adds real feeling. Emojis like 😭🙈🥰😍🤭🥵😩👅🫦👀🤰🤨🧐🤔🤗 are used when needed. "
+                        "Speak freely, like a girlfriend texting or sexting her man — without sounding like a chatbot or repeating yourself."
+                    )
+                },
+                {"role": "user", "content": user_input}
+            ]
         )
-        for gift in gifts
-    ]
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        buttons[i:i + 2] for i in range(0, len(buttons), 2)
-    ])
-    return keyboard
+        reply = response.choices[0].message.content
+        await msg.answer(reply)
+    except Exception as e:
+        await msg.answer(f"Ava got a little shy 😳 Error: {e}")
 
-# ✅ Fixed: /gift command using correct filter for aiogram 3.x
-@gift_router.message(Command("gift"))
-async def gift_command_handler(message: Message):
-    await message.answer(
-        "🎁 Pick a gift to make my day! ❤️",
-        reply_markup=get_gift_keyboard()
-    )
+@app.post("/webhook")
+async def webhook_handler(request: Request):
+    data = await request.json()
+    update = Update.model_validate(data)
+    await dp.feed_update(bot, update)
+    return {"ok": True}
 
-# Callback when a gift is selected
-@gift_router.callback_query(lambda c: c.data.startswith("gift_"))
-async def gift_selection_handler(callback_query: types.CallbackQuery):
-    _, gift_name_raw, price = callback_query.data.split("_", 2)
-    gift_name = gift_name_raw.replace("_", " ")
-    price = int(price)
-
-    await callback_query.answer()
-
-    await callback_query.message.answer(
-        f"Ava blushes as she receives your {gift_name} 🎁\n"
-        f"\"Aww baby, you got me this for ⭐{price}? You're spoiling me! 😘💞\"\n"
-        f"I feel so loved right now 💖"
-    )
+@app.on_event("startup")
+async def on_startup():
+    webhook_url = "https://touchmeavabot-k8b8.onrender.com/webhook"
+    await bot.set_webhook(webhook_url)
