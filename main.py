@@ -8,24 +8,28 @@ from aiogram.filters import Command
 from aiogram.types import Update
 from openai import OpenAI
 
-# ✅ Import stars router only
+# ✅ Remove proxy if exists
+os.environ.pop("http_proxy", None)
+os.environ.pop("https_proxy", None)
+
+# ✅ Import stars router
 from stars_gift_handler import stars_router
 
-# Load environment variables
+# Load env variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 if not BOT_TOKEN:
     raise Exception("BOT_TOKEN not set!")
 
-# ✅ Initialize OpenAI (no api_key argument needed with openai>=1.0.0)
-client = OpenAI()
+# ✅ Initialize OpenAI client
+client = OpenAI(api_key=OPENAI_API_KEY)
 
-# ✅ Bot setup
+# ✅ Setup bot
 bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 
-# ✅ Register stars router
 dp.include_router(stars_router)
 dp.include_router(router)
 
@@ -67,12 +71,10 @@ async def chat_handler(msg: types.Message):
     except Exception as e:
         await msg.answer(f"Ava got a little shy 😳 Error: {e}")
 
-# ✅ Handle Stars payment approval
 @router.pre_checkout_query()
 async def pre_checkout_query_handler(pre_checkout: types.PreCheckoutQuery):
     await bot.answer_pre_checkout_query(pre_checkout.id, ok=True)
 
-# ✅ Handle successful payment with Stars
 @router.message(lambda msg: msg.successful_payment is not None)
 async def successful_payment_handler(msg: types.Message):
     item = msg.successful_payment.invoice_payload.replace("_", " ").title()
