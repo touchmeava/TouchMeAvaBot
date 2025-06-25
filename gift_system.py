@@ -1,5 +1,6 @@
 from aiogram import Router, types
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.filters import Command  # ✅ Required for aiogram 3.x
 
 gift_router = Router()
 
@@ -33,8 +34,8 @@ def get_gift_keyboard():
     ])
     return keyboard
 
-# /gift command
-@gift_router.message(commands=["gift"])
+# ✅ Fixed: /gift command using correct filter for aiogram 3.x
+@gift_router.message(Command("gift"))
 async def gift_command_handler(message: Message):
     await message.answer(
         "🎁 Pick a gift to make my day! ❤️",
@@ -50,7 +51,6 @@ async def gift_selection_handler(callback_query: types.CallbackQuery):
 
     await callback_query.answer()
 
-    # Example response — you can customize this for each gift
     await callback_query.message.answer(
         f"Ava blushes as she receives your {gift_name} 🎁\n"
         f"\"Aww baby, you got me this for ⭐{price}? You're spoiling me! 😘💞\"\n"
