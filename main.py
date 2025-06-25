@@ -18,7 +18,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not BOT_TOKEN:
     raise Exception("BOT_TOKEN not set!")
 
-# Initialize OpenAI client
+# ✅ Initialize OpenAI client (new syntax)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ✅ Bot setup
@@ -26,13 +26,11 @@ bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 
-# ✅ Register only stars router
+# ✅ Register routers
 dp.include_router(stars_router)
-
-# ✅ Fallback router
 dp.include_router(router)
 
-# FastAPI setup
+# ✅ FastAPI app
 app = FastAPI()
 
 @app.get("/")
