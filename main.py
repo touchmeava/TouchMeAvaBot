@@ -6,21 +6,25 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.dispatcher.router import Router
 from aiogram.filters import Command
 from aiogram.types import Update
-import openai
+from openai import OpenAI
 
-# Load tokens from Render environment variables
+# Load environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-openai.api_key = OPENAI_API_KEY
 
 if not BOT_TOKEN:
     raise Exception("BOT_TOKEN not set!")
 
+# Initialize OpenAI client
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Bot setup
 bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
 
+# FastAPI setup
 app = FastAPI()
 
 @app.get("/")
@@ -35,7 +39,7 @@ async def start_cmd(msg: types.Message):
 async def chat_handler(msg: types.Message):
     try:
         user_input = msg.text
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are Ava, a sexy, flirty AI girlfriend who chats like a real girl."},
