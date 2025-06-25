@@ -8,8 +8,7 @@ from aiogram.filters import Command
 from aiogram.types import Update
 from openai import OpenAI
 
-# 👉 Add this to import the gift router
-from gift_system import gift_router
+from gift_system import gift_router  # ✅ Import gift router
 
 # Load environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -26,9 +25,7 @@ bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
-
-# 👉 Include the gift router after main router
-dp.include_router(gift_router)
+dp.include_router(gift_router)  # ✅ Attach gift router after dispatcher is created
 
 # FastAPI setup
 app = FastAPI()
