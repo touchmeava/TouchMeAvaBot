@@ -1,10 +1,10 @@
 from aiogram import Router, types
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice
 from aiogram.filters import Command
 
 gift_router = Router()
 
-# Gift data
+# List of gifts with emoji, name, price (in stars)
 gifts = [
     {"emoji": "💍", "name": "Heart Ring", "price": 2500},
     {"emoji": "🏍️", "name": "Bike", "price": 1500},
@@ -20,7 +20,7 @@ gifts = [
     {"emoji": "🍬", "name": "Candy", "price": 250},
 ]
 
-# Keyboard builder
+# Build inline buttons
 def get_gift_keyboard():
     buttons = [
         InlineKeyboardButton(
@@ -31,24 +31,44 @@ def get_gift_keyboard():
     ]
     return InlineKeyboardMarkup(inline_keyboard=[buttons[i:i + 2] for i in range(0, len(buttons), 2)])
 
-# Command handler
+# Handle /gift command
 @gift_router.message(Command("gift"))
 async def gift_command_handler(message: Message):
     await message.answer(
-        "🎁 Pick a gift to make my day! ❤️",
+        "🎁 Pick a gift to make Ava smile 😘",
         reply_markup=get_gift_keyboard()
     )
 
-# Button handler
+# Handle gift button clicks
 @gift_router.callback_query(lambda c: c.data.startswith("gift_"))
-async def gift_selection_handler(callback_query: CallbackQuery):
-    _, gift_name_raw, price = callback_query.data.split("_", 2)
-    gift_name = gift_name_raw.replace("_", " ")
-    price = int(price)
+async def handle_gift_selection(callback: types.CallbackQuery, bot: types.Bot):
+    await callback.answer()
+    _, raw_name, raw_price = callback.data.split("_", 2)
+    gift_name = raw_name.replace("_", " ")
+    gift_price = int(raw_price)
 
-    await callback_query.answer()
-    await callback_query.message.answer(
-        f"Ava blushes as she receives your {gift_name} 🎁\n"
-        f"\"Aww baby, you got me this for ⭐{price}? You're spoiling me! 😘💞\"\n"
-        f"I feel so loved right now 💖"
+    # Stars payment
+    await bot.send_invoice(
+        chat_id=callback.from_user.id,
+        title=f"Gift: {gift_name}",
+        description=f"Send Ava a {gift_name} ❤️",
+        provider_token="STARS",  # Special token for Telegram Stars (do not change)
+        currency="STARS",
+        prices=[LabeledPrice(label=gift_name, amount=gift_price)],
+        payload=f"gift_{gift_name}"
+    )
+
+# Handle successful payment
+@gift_router.pre_checkout_query()
+async def pre_checkout_handler(query: types.PreCheckoutQuery, bot: types.Bot):
+    await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=True)
+
+@gift_router.message(lambda msg: msg.successful_payment is not None)
+async def payment_success_handler(message: Message):
+    gift_name = message.successful_payment.invoice_payload.replace("gift_", "")
+    amount = message.successful_payment.total_amount
+    await message.answer(
+        f"💖 Ava received your {gift_name} for ⭐ {amount}!\n"
+        f"She hugs you tightly and kisses your cheek 😘\n"
+        f"You made her day!"
     )
