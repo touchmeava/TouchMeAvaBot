@@ -8,29 +8,28 @@ from aiogram.filters import Command
 from aiogram.types import Update
 from openai import OpenAI
 
-# ✅ Import stars router only (gift_system removed)
+# ✅ Import stars router only
 from stars_gift_handler import stars_router
 
 # Load environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 if not BOT_TOKEN:
     raise Exception("BOT_TOKEN not set!")
 
-# ✅ Initialize OpenAI client (new syntax)
-client = OpenAI(api_key=OPENAI_API_KEY)
+# ✅ Initialize OpenAI (no api_key argument needed with openai>=1.0.0)
+client = OpenAI()
 
 # ✅ Bot setup
 bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 
-# ✅ Register routers
+# ✅ Register stars router
 dp.include_router(stars_router)
 dp.include_router(router)
 
-# ✅ FastAPI app
+# ✅ FastAPI setup
 app = FastAPI()
 
 @app.get("/")
