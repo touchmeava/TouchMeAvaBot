@@ -8,10 +8,7 @@ from aiogram.filters import Command
 from aiogram.types import Update
 from openai import OpenAI
 
-# ✅ Import gift router
-from gift_system import gift_router
-
-# ✅ Import stars router
+# ✅ Import stars router only (gift_system removed)
 from stars_gift_handler import stars_router
 
 # Load environment variables
@@ -29,8 +26,7 @@ bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 
-# ✅ Register gift and star routers
-dp.include_router(gift_router)
+# ✅ Register only stars router
 dp.include_router(stars_router)
 
 # ✅ Fallback router
