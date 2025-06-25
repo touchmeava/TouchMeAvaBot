@@ -1,0 +1,9 @@
+@stars_router.message(lambda msg: msg.successful_payment is not None)
+async def handle_successful_payment(msg: types.Message):
+    payment = msg.successful_payment
+    title = payment.invoice_payload.replace("_", " ").title()
+    amount = payment.total_amount // 100  # Stars come as cents
+    await msg.answer(
+        f"💖 Ava is blushing! You just sent her a {title} worth ⭐{amount}!\n"
+        f"You’re spoiling your girlfriend… she loves it 🥺💋"
+    )
