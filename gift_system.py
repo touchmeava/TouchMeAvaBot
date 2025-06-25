@@ -1,6 +1,6 @@
 from aiogram import Router, types
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.filters import Command  # ✅ Required for aiogram 3.x
+from aiogram.filters import Command  # ✅ aiogram 3.x filter
 
 gift_router = Router()
 
@@ -20,7 +20,7 @@ gifts = [
     {"emoji": "🍬", "name": "Candy", "price": 250},
 ]
 
-# Keyboard builder
+# Build gift keyboard dynamically
 def get_gift_keyboard():
     buttons = [
         InlineKeyboardButton(
@@ -29,9 +29,12 @@ def get_gift_keyboard():
         )
         for gift in gifts
     ]
-    return InlineKeyboardMarkup(inline_keyboard=[buttons[i:i + 2] for i in range(0, len(buttons), 2)])
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+    )
+    return keyboard
 
-# /gift command handler
+# ✅ /gift command
 @gift_router.message(Command("gift"))
 async def gift_command_handler(message: Message):
     await message.answer(
@@ -39,7 +42,7 @@ async def gift_command_handler(message: Message):
         reply_markup=get_gift_keyboard()
     )
 
-# Callback for gift selection
+# ✅ Handle gift selection
 @gift_router.callback_query(lambda c: c.data.startswith("gift_"))
 async def gift_selection_handler(callback_query: types.CallbackQuery):
     _, gift_name_raw, price = callback_query.data.split("_", 2)
