@@ -1,0 +1,6 @@
+from aiogram import F
+from aiogram.types import PreCheckoutQuery
+
+@stars_router.pre_checkout_query()
+async def process_pre_checkout_query(pre_checkout_q: PreCheckoutQuery, bot: Bot):
+    await bot.answer_pre_checkout_query(pre_checkout_q.id, ok=True)
