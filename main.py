@@ -1,22 +1,22 @@
 import os
 from fastapi import FastAPI, Request
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Bot, Dispatcher, types
 from aiogram.types import Update
-from aiogram.client.default import DefaultBotSettings
-from aiogram.router import Router
+from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.dispatcher.router import Router
+from aiogram.filters import Command
 
-# Load bot token
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-if not BOT_TOKEN:
-    raise Exception("❌ BOT_TOKEN not set!")
+TOKEN = os.getenv("BOT_TOKEN")
+if not TOKEN:
+    raise Exception("BOT_TOKEN not set!")
 
-# Create bot and dispatcher
-bot = Bot(token=BOT_TOKEN, default=DefaultBotSettings(parse_mode="HTML"))
-dp = Dispatcher()
+# Setup
+bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
 
-# FastAPI app
 app = FastAPI()
 
 # Health check
@@ -24,25 +24,21 @@ app = FastAPI()
 async def health():
     return {"message": "TouchMeAva is online 😘"}
 
+# /start command
+@router.message(Command("start"))
+async def start_cmd(message: types.Message):
+    await message.answer("Hey baby 😘 Ava is alive and ready for you.")
+
 # Webhook route
 @app.post("/webhook")
-async def handle_webhook(request: Request):
-    try:
-        data = await request.json()
-        update = Update.model_validate(data)
-        await dp.feed_update(bot, update)
-    except Exception as e:
-        print("❌ Webhook error:", e)
+async def webhook_handler(request: Request):
+    data = await request.json()
+    update = Update.model_validate(data)
+    await dp.feed_update(bot, update)
     return {"ok": True}
-
-# Telegram /start command handler
-@router.message(F.text == "/start")
-async def start_cmd(msg: types.Message):
-    await msg.answer("Hey baby 😘 Ava is alive and ready for you.")
 
 # Set webhook on startup
 @app.on_event("startup")
-async def startup():
+async def on_startup():
     webhook_url = "https://touchmeavabot-k8b8.onrender.com/webhook"
     await bot.set_webhook(webhook_url)
-    print(f"✅ Webhook set: {webhook_url}")
