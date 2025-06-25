@@ -45,7 +45,7 @@ async def chat_handler(msg: types.Message):
         reply = response.choices[0].message.content
         await msg.answer(reply)
     except Exception as e:
-        await msg.answer("Ava got a little shy 😳 Something went wrong.")
+        await msg.answer(f"Ava got a little shy 😳 Error: {e}")
 
 @app.post("/webhook")
 async def webhook_handler(request: Request):
